@@ -1,0 +1,104 @@
+name: UN Jobs Crawler
+
+on:
+  schedule:
+    # Run every 6 hours (at 00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  crawl-and-notify:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build project
+        run: npm run build
+        
+      - name: Download previous results artifact
+        id: download-artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: previous-jobs
+          path: ./artifacts
+        continue-on-error: true # Don't fail if no previous artifact exists
+        
+      - name: Check if previous jobs file exists
+        id: check-prev-file
+        run: |
+          if [ -f "./artifacts/prevjobs.json" ]; then
+            echo "prev_exists=true" >> $GITHUB_OUTPUT
+            cp ./artifacts/prevjobs.json ./prevjobs.json
+            echo "✅ Previous jobs file found and copied"
+          else
+            echo "prev_exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No previous jobs file found - this might be the first run"
+          fi
+          
+      - name: Run crawler with comparison (if previous file exists)
+        if: steps.check-prev-file.outputs.prev_exists == 'true'
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          npm run dev crawl -- -o alljobs.json -c prevjobs.json -e "${{ secrets.RECIPIENT }}"
+          
+      - name: Run crawler without comparison (first run)
+        if: steps.check-prev-file.outputs.prev_exists == 'false'
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          npm run dev crawl -- -o alljobs.json -e "${{ secrets.RECIPIENT }}"
+          
+      - name: Prepare artifacts for next run
+        run: |
+          mkdir -p ./next-artifacts
+          if [ -f "alljobs.json" ]; then
+            cp alljobs.json ./next-artifacts/prevjobs.json
+            echo "✅ Prepared alljobs.json as prevjobs.json for next run"
+          else
+            echo "❌ No alljobs.json found to prepare for next run"
+            exit 1
+          fi
+          
+      - name: Upload results as artifact for next run
+        uses: actions/upload-artifact@v4
+        with:
+          name: previous-jobs
+          path: ./next-artifacts/prevjobs.json
+          retention-days: 10 # Keep for 10 days
+          
+      - name: Upload current results as backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobs-results-${{ github.run_number }}
+          path: alljobs.json
+          retention-days: 20 # Keep job results longer for reference
+          
+      - name: Display run summary
+        run: |
+          echo "## 📊 Crawl Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Number**: ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date)" >> $GITHUB_STEP_SUMMARY
+          if [ -f "alljobs.json" ]; then
+            JOB_COUNT=$(jq length alljobs.json)
+            echo "- **Total Jobs Found**: $JOB_COUNT" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ steps.check-prev-file.outputs.prev_exists }}" == "true" ]; then
+            echo "- **Previous File**: Found and used for comparison" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Previous File**: Not found (first run or artifact expired)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "- **Email Recipient**: ${{ secrets.RECIPIENT }}" >> $GITHUB_STEP_SUMMARY
