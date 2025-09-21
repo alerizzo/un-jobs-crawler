@@ -1,0 +1,40 @@
+{
+  "name": "un-jobs-crawler",
+  "version": "1.0.0",
+  "description": "A command line application for crawling UN jobs",
+  "main": "dist/index.js",
+  "bin": {
+    "un-jobs-crawler": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "cli",
+    "typescript",
+    "nodejs",
+    "un-jobs",
+    "crawler"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/lodash": "4.17.20",
+    "@types/node": "^20.0.0",
+    "@types/nodemailer": "7.0.1",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "cheerio": "1.1.2",
+    "commander": "^11.0.0",
+    "lodash": "4.17.21",
+    "nodemailer": "7.0.6"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
