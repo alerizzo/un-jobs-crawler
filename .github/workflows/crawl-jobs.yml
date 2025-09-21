@@ -28,7 +28,7 @@ jobs:
         
       - name: Download previous results artifact
         id: download-artifact
-upate        uses: dawidd6/action-download-artifact@09f2f74827fd3a8607589e5ad7f9398816f540fe # v3.1.4
+        uses: dawidd6/action-download-artifact@09f2f74827fd3a8607589e5ad7f9398816f540fe # v3.1.4
         with:
           name: previous-jobs
           path: ./artifacts
