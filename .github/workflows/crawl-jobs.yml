@@ -28,11 +28,11 @@ jobs:
         
       - name: Download previous results artifact
         id: download-artifact
-        uses: dawidd6/action-download-artifact@09f2f74827fd3a8607589e5ad7f9398816f540fe # v3.1.4
+        uses: dawidd6/action-download-artifact@v11
         with:
           name: previous-jobs
           path: ./artifacts
-          workflow: ${{ github.workflow }}
+          workflow: crawl-jobs.yml
           if_no_artifact_found: ignore # Don't fail if no previous artifact exists
         
       - name: Check if previous jobs file exists
