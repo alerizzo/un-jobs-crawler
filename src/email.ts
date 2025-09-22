@@ -35,18 +35,16 @@ export class EmailService {
     return `
       <h2>New UN Jobs Found</h2>
       <p>Found ${jobs.length} new job(s):</p>
-      <ul>
+      <div>
         ${jobs
           .map(
             (job) =>
-              `<li><strong>${job.title}</strong> - ${
-                job.organization || "UN"
-              }</li>`
+              `<h3><a href="${job.url}">${job.title}</a></h3>
+              <span>${job.organization || "UN"}</span>
+              </div>`
           )
           .join("")}
-      </ul>
-      <p>Full details:</p>
-      <pre>${JSON.stringify(jobs, null, 2)}</pre>
+      </div>
     `;
   }
 
