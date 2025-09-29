@@ -1,5 +1,6 @@
 export interface Crawler {
   website: string;
+  prefix: string;
   url: string;
   crawl: () => Promise<Job[]>;
 }

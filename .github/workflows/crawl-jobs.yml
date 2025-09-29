@@ -52,14 +52,16 @@ jobs:
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          npm run dev crawl -- -o alljobs.json -c prevjobs.json -e "${{ secrets.RECIPIENT }}"
+          npm run dev crawl -- -o alljobs.json -c prevjobs.json -e "${{ secrets.RECIPIENT }}" -x new-jobs.json
           
       - name: Run crawler without comparison (first run)
         if: steps.check-prev-file.outputs.prev_exists == 'false'
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           npm run dev crawl -- -o alljobs.json -e "${{ secrets.RECIPIENT }}"
           
@@ -85,7 +87,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jobs-results-${{ github.run_number }}
-          path: alljobs.json
+          path: new-jobs.json
           retention-days: 20 # Keep job results longer for reference
           
       - name: Display run summary
@@ -96,6 +98,10 @@ jobs:
           if [ -f "alljobs.json" ]; then
             JOB_COUNT=$(jq length alljobs.json)
             echo "- **Total Jobs Found**: $JOB_COUNT" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "new-jobs.json" ]; then
+            JOB_COUNT=$(jq length new-jobs.json)
+            echo "- **New Jobs Found**: $JOB_COUNT" >> $GITHUB_STEP_SUMMARY
           fi
           if [ "${{ steps.check-prev-file.outputs.prev_exists }}" == "true" ]; then
             echo "- **Previous File**: Found and used for comparison" >> $GITHUB_STEP_SUMMARY

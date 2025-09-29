@@ -31,8 +31,10 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",
     "commander": "^11.0.0",
+    "dotenv": "17.2.2",
     "lodash": "4.17.21",
-    "nodemailer": "7.0.6"
+    "nodemailer": "7.0.6",
+    "openai": "5.23.0"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -1,9 +1,10 @@
 import nodemailer from "nodemailer";
-import { Job } from "./types";
+import { CategorizedJob } from ".";
+import { groupBy } from "lodash";
 
 export interface EmailConfig {
   to: string;
-  jobs: Job[];
+  jobs: CategorizedJob[];
 }
 
 export class EmailService {
@@ -31,24 +32,50 @@ export class EmailService {
     });
   }
 
-  private static formatJobsHtml(jobs: Job[]): string {
+  private static formatJobsHtml(jobs: CategorizedJob[]): string {
+    const jobsByRelevance = groupBy(jobs, "category");
+
+    const jobsHtml = (jobs: CategorizedJob[], title: string) => {
+      if (jobs.length === 0) return "";
+
+      const content = jobs
+        .map((job) => {
+          return `<h4><a href="${job.url}">${job.title}</a></h4>
+        <span>${job.organization || "UN"}</span>
+        <small>${job.reasoning}</small>
+        </div>`;
+        })
+        .join("");
+
+      return `
+        <h3>${title} (${jobs.length || 0})</h3>
+        ${content}
+      `;
+    };
+
+    const {
+      relevant,
+      potentiallyRelevant,
+      needsHumanReview,
+      notRelevant,
+      ...other
+    } = jobsByRelevance;
+
+    const otherJobs = Object.values(other).flat();
+
     return `
-      <h2>New UN Jobs Found</h2>
-      <p>Found ${jobs.length} new job(s):</p>
+      <h2>Found ${jobs.length} new job(s):</h2>
       <div>
-        ${jobs
-          .map(
-            (job) =>
-              `<h3><a href="${job.url}">${job.title}</a></h3>
-              <span>${job.organization || "UN"}</span>
-              </div>`
-          )
-          .join("")}
+        ${jobsHtml(relevant || [], "Relevant")}
+        ${jobsHtml(potentiallyRelevant || [], "Potentially Relevant")}
+        ${jobsHtml(needsHumanReview || [], "Needs Human Review")}
+        ${jobsHtml(notRelevant || [], "Not Relevant")}
+        ${jobsHtml(otherJobs || [], "Other")}
       </div>
     `;
   }
 
-  private static formatJobsText(jobs: Job[]): string {
+  private static formatJobsText(jobs: CategorizedJob[]): string {
     return `New UN Jobs Found\n\nFound ${
       jobs.length
     } new job(s):\n\n${JSON.stringify(jobs, null, 2)}`;

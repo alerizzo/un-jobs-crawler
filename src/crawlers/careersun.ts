@@ -175,6 +175,7 @@ const crawler = async () => {
 
 export const CareersUNCrawler: Crawler = {
   website: "CareersUN",
+  prefix: "careersun",
   url: "https://careers.un.org/jobopening",
   crawl: crawler,
 };
